@@ -9,6 +9,6 @@ class PeptidesWithRetentionTimes(torch.utils.data.Dataset):
         return len(self.peptides)
 
     def __getitem__(self, index):
-        peptide = self.peptides[index]
-        retentionTime = self.retentionTimes[index]
+        peptide = self.peptides[int(index)]
+        retentionTime = self.retentionTimes[int(index)]
         return peptide, retentionTime
