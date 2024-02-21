@@ -33,11 +33,12 @@ def getPreTokens(df: pandas.DataFrame) -> list:
     return preTokens
 
 def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
-                       sequenceLength: int, tokenFormat: TokenFormat) -> list:
+                       sequenceLength: int, tokenFormat: Enum) -> list:
     '''
-    Tokenizes the preTokens and returns a list of tokens. Format of each item in the list: [2D numpy array (sequence, mods), retention time]
+    Tokenizes the preTokens and returns a list of tokens. 
+    Format of each item in the list: [2D numpy array (sequence, mods), retention time]
     '''
-    
+
     tokens = []
     #For now will be using the two dimensional format, need to implement the other formats later if necesary
     if(tokenFormat == TokenFormat.TwoDimensional):
@@ -45,32 +46,45 @@ def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
             tokenList = []
             modList = []
             #form the tokenList and the modList. 
-            #tokenList is the list of tokens for the residues and modList is the list of tokens for the modifications
+            #tokenList is the list of tokens for the residues and modList is 
+            #the list of tokens for the modifications
             for subSequence in sequence[0].split("*"):
                 if("on" not in subSequence):
                     for residue in subSequence:
                         if(residue in vocabularyDictionary):
-                            tokenList.append(vocabularyDictionary[residue[-1]])
-                            modList.append(vocabularyDictionary[residue])
+                            tokenList.append(vocabularyDictionary[residue])
+                            modList.append(0)
                         else:
                             tokenList.clear()
                             modList.clear()
                             break
                 else:
                     if(subSequence in vocabularyDictionary):
-                        tokenList.append(vocabularyDictionary[subSequence])
-                        modList.append(0)
+                        if(subSequence[len(subSequence)-1] == "X"):
+                            tokenList.append(22)
+                            modList.append(vocabularyDictionary[subSequence])
+                        elif(subSequence[len(subSequence)-1] == "U"):
+                            tokenList.append(21)
+                            modList.append(0)
+                        else:
+                            tokenList.append(vocabularyDictionary[subSequence[len(subSequence)-1]])
+                            modList.append(vocabularyDictionary[subSequence])
                     else:
                         tokenList.clear()
                         modList.clear()
                         break
             #if the sequence is less than the sequence length, pad it with zeros
             if(len(tokenList) != 0):
-                while(len(tokenList) != sequenceLength):
+                while(len(tokenList) != sequenceLength and len(modList) < sequenceLength):
                     tokenList.append(0)
                     modList.append(0)
                 #make 2d numpy array
-                sequenceWithMods = numpy.array([tokenList, modList])
+                arrayList = []
+                arrayList.append(numpy.array(tokenList))
+                arrayList.append(numpy.array(modList))
+                #stack the arrays
+                sequenceWithMods = numpy.vstack(arrayList)
+                #append the stacked arrays with the retention time to the tokens list
                 tokens.append((sequenceWithMods, sequence[1]))
                 
     return tokens
@@ -81,4 +95,7 @@ class TokenFormat(Enum):
     TwoDimensional = 3 #mods are in a separate dimension from the residues
 
 #utils
-canonicalAminoAcids = {"A":1,"C":2,"D":3, "E":4, "F":5, "G":6, "H":7, "I":8, "K":9, "L":10, "M":11, "N":12, "P":13, "Q":14, "R":15, "S":16, "T":17, "V":18, "W":19, "Y":20}
+aa = {"A":1,"C":2,"D":3, "E":4, "F":5, "G":6, "H":7,
+                        "I":8, "K":9, "L":10, "M":11, "N":12, "P":13,
+                        "Q":14, "R":15, "S":16, "T":17, "V":18, "W":19, "Y":20,
+                        "U":21, "X":22} #U is for selenocysteine and X is for any amino acid
