@@ -9,10 +9,14 @@ from ray.tune.schedulers import ASHAScheduler
 from ray import train
 from src import tokenize
 from src import utils
+import tempfile
 import numpy
 import random
+from typing import Dict
+from filelock import FileLock
 from src.TunableAttentionRegression import TunableAttentionRegression
 from CustomDatasets.PeptidesWithRetentionTimes import PeptidesWithRetentionTimes
+
 # class TunableAttentionRegression(torch.nn.Module):
 #     def __init__(self, input_size = 2707, hidden_size = 512,
 #                 output_size = 1, numberOfHeads = 1) -> None:
@@ -103,16 +107,24 @@ def train_model(config):
     criterion = torch.nn.L1Loss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config["lr"])
 
-    checkpoint = train.get_checkpoint()
+    # checkpoint = train.get_checkpoint()
     
-    if checkpoint:
-        checkpoint_state = checkpoint.to_dict()
-        start_epoch = checkpoint_state["epoch"]
-        model.load_state_dict(checkpoint_state["net_state_dict"])
-        optimizer.load_state_dict(checkpoint_state["optimizer_state_dict"])
-    else:
-        start_epoch = 0
+    # if checkpoint:
+    #     checkpoint_state = checkpoint.to_dict()
+    #     start_epoch = checkpoint_state["epoch"]
+    #     model.load_state_dict(checkpoint_state["net_state_dict"])
+    #     optimizer.load_state_dict(checkpoint_state["optimizer_state_dict"])
+    # else:
+    #     start_epoch = 0
     
+    if train.get_checkpoint():
+        loaded_checkpoint = train.get_checkpoint()
+        with loaded_checkpoint.as_directory() as loaded_checkpoint_dir:
+            model_state, optimizer_state = torch.load(
+                os.path.join(loaded_checkpoint_dir, "checkpoint.pt"))
+            model.load_state_dict(model_state)
+            optimizer.load_state_dict(optimizer_state)
+
 
     trainSet, testingSet = get_training_datasets()
 
@@ -121,7 +133,7 @@ def train_model(config):
     validationLoader = torch.utils.data.DataLoader(
         testingSet, batch_size=32, shuffle=True, num_workers=1)
     
-    for epoch in range(start_epoch, 10):  # loop over the dataset multiple times
+    for epoch in range(10):  # loop over the dataset multiple times
         running_loss = 0.0
         epoch_steps = 0
         for i, data in enumerate(trainLoader, 0):
@@ -165,23 +177,34 @@ def train_model(config):
                 val_loss += loss.cpu().numpy()
                 val_steps += 1
     
-        checkpoint_data = {
-            "epoch": epoch,
-            "net_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-        }
-        checkpoint = Checkpoint.from_dict(checkpoint_data)
+        with tempfile.TemporaryDirectory() as temp_checkpoint_dir:
+            path = os.path.join(temp_checkpoint_dir, "checkpoint.pt")
+            torch.save((model.state_dict(), optimizer.state_dict()), path)
+            checkpoint = Checkpoint.from_directory(temp_checkpoint_dir)
+            train.report(
+                {"loss": (val_loss / val_steps),
+                "accuracy": correct / total},
+                checkpoint=checkpoint,)
+        # checkpoint_data = {
+        #     "epoch": epoch,
+        #     "net_state_dict": model.state_dict(),
+        #     "optimizer_state_dict": optimizer.state_dict(),
+        # }
+        # checkpoint = Checkpoint.from_dict(checkpoint_data)
     
-        session.report(
-            {"loss": val_loss / val_steps, "accuracy": correct / total},
-            checkpoint=checkpoint,
-        )
+        # session.report(
+        #     {"loss": val_loss / val_steps, "accuracy": correct / total},
+        #     checkpoint=checkpoint,
+        # )
     print("Finished Training")
     
 
 def test_accuracy(model, trainset, testset):
     testloader = torch.utils.data.DataLoader(
         testset, batch_size=4, shuffle=False, num_workers=2)
+
+    checkpoint_path = os.path.join(model.checkpoint.to_directory(), "checkpoint.pt")
+
 
     correct = 0
     total = 0
@@ -211,7 +234,7 @@ def main(num_samples=10, max_num_epochs=10):
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(train_model),
-        resources={"cpu": 1}),
+        resources={"cpu": 4}),
     tune_config = tune.TuneConfig(
         metric="loss",
         mode="min",

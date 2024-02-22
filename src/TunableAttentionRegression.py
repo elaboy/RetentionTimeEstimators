@@ -12,9 +12,14 @@ class TunableAttentionRegression(torch.nn.Module):
 
     def forward(self, x) -> torch.Tensor:
         embedded = self.embedding(x)
-        lstm_out, _ = self.lstm(embedded)
-        lstm_out = lstm_out.permute(1, 0, 2)  # [seq_len, batch, hidden_size]
-        attention_output, _ = self.attention(lstm_out, lstm_out, lstm_out)
-        output = self.fc(attention_output.mean(dim=0))
-        output = self.sigmoid(output)
-        return output
+        outputList = []
+        for eachSequence in range(0, list(embedded.shape)[0]):
+            iteratedTensor = embedded[eachSequence, :, :]
+            lstm_out, _ = self.lstm(iteratedTensor)
+            lstm_out = lstm_out.permute(1, 0, 2)  # [seq_len, batch, hidden_size]
+            attention_output, _ = self.attention(lstm_out, lstm_out, lstm_out)
+            output = self.fc(attention_output.mean(dim=0))
+            output = self.sigmoid(output)
+            outputList.append(output)
+
+        return torch.stack(outputList)
