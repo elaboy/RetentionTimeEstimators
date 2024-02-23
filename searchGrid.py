@@ -78,7 +78,7 @@ def get_datasets():
     vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
     data = tokenize.readData("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\CalibratorTestingMultipleFiles.csv")
     preTokens = tokenize.getPreTokens(data)
-    tokens = tokenize.tokenizePreTokens(random.sample(preTokens, 1000),
+    tokens = tokenize.tokenizePreTokens(random.sample(preTokens, 10000),
                                         vocab, 100, tokenize.TokenFormat.TwoDimensional)
     train, test = utils.splitData(tokens, 0.9, 0.1)
 
