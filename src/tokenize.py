@@ -26,9 +26,9 @@ def getPreTokens(df: pandas.DataFrame) -> list:
             "(?<=[A-HJ-Z])\\[|(?<=\\[)[A-HJ-Z](?=\\])|(?<=[A-HJ-Z])\\](?=$|[A-Z]|(?<=\\])[^A-Z])",
                 "*", sequence)
             removedColon = regex.sub("\\*(.*?):", "*", stars)
-            preTokens.append((removedColon, row[1]))
+            preTokens.append((removedColon, row[2]))
         else:
-            preTokens.append((sequence, row[1]))
+            preTokens.append((sequence, row[2]))
 
     return preTokens
 

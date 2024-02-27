@@ -16,6 +16,8 @@ from typing import Dict
 from filelock import FileLock
 from src.TunableAttentionRegression import TunableAttentionRegression
 from CustomDatasets.PeptidesWithRetentionTimes import PeptidesWithRetentionTimes
+import sklearn.model_selection
+import pandas
 
 # class TunableAttentionRegression(torch.nn.Module):
 #     def __init__(self, input_size = 2707, hidden_size = 512,
@@ -51,7 +53,7 @@ from CustomDatasets.PeptidesWithRetentionTimes import PeptidesWithRetentionTimes
     
 def get_training_datasets():
     vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
-    data = tokenize.readData("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\CalibratorTestingMultipleFiles.csv")
+    data = tokenize.readData("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\RetentionFileDatasets.csv")
     preTokens = tokenize.getPreTokens(data)
     tokens = tokenize.tokenizePreTokens(random.sample(preTokens, 1000),
                                         vocab, 100, tokenize.TokenFormat.TwoDimensional)
@@ -76,7 +78,7 @@ def get_training_datasets():
 
 def get_datasets():
     vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
-    data = tokenize.readData("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\CalibratorTestingMultipleFiles.csv")
+    data = tokenize.readData("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\RetentionFileDatasets.csv")
     preTokens = tokenize.getPreTokens(data)
     tokens = tokenize.tokenizePreTokens(random.sample(preTokens, 10000),
                                         vocab, 100, tokenize.TokenFormat.TwoDimensional)
@@ -98,6 +100,41 @@ def get_datasets():
     testingDataset = PeptidesWithRetentionTimes(testingSequences, testingRetentionTimes)
 
     return trainingDataset, testingDataset
+
+def get_datasets_all():
+    '''
+    Returns train, validation, and testing datasets (0.8, 0.1, 0.1)
+    '''
+    vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
+    data = pandas.read_csv("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\RetentionFileDatasets.csv", index_col=None, header=0)
+    preTokens = tokenize.getPreTokens(data)
+    tokens = tokenize.tokenizePreTokens(preTokens, vocab, 100, tokenize.TokenFormat.TwoDimensional)
+    train, validateAndTest = sklearn.model_selection.train_test_split(tokens, test_size=0.2)
+    validate, test = sklearn.model_selection.train_test_split(validateAndTest, test_size=0.5)
+
+    trainingSequences = []
+    trainingRetentionTimes = []
+    for i in train:
+        trainingSequences.append(i[0])
+        trainingRetentionTimes.append(i[1])
+
+    validationSequences = []
+    validationRetentionTimes = []
+    for i in validate:
+        validationSequences.append(i[0])
+        validationRetentionTimes.append(i[1])
+
+    testingSequences = []
+    testingRetentionTimes = []
+    for i in train:
+        testingSequences.append(i[0])
+        testingRetentionTimes.append(i[1])
+
+    trainingDataset = PeptidesWithRetentionTimes(trainingSequences, trainingRetentionTimes)
+    testingDataset = PeptidesWithRetentionTimes(testingSequences, testingRetentionTimes)
+    validationDataset = PeptidesWithRetentionTimes(validationSequences, validationRetentionTimes)
+
+    return trainingDataset, validationDataset, testingDataset
 
 def train_model(config):
     model = TunableAttentionRegression(config["input_size"],

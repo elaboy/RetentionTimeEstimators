@@ -128,9 +128,12 @@ def testBestModel(best_result):
     print("Best trial test set accuracy: {}".format(correct / total))
     
 def main(numberOfSamples, maximumNumberOfEpochs):
+    # Set the Ray Tune configuration
+    listForHiddenSize = [2 ** i for i in range(1, 5)]
+    numberOfHeadsList = [0 + i for i in range(0, 25)]
     config = {
-        "hidden_size": tune.sample_from(lambda _: 2 * range(1, 15)),
-        "numberOfHeads": tune.sample_from(lambda _: 1 + range(0, 15)),
+        "hidden_size": tune.choice(listForHiddenSize),
+        "numberOfHeads": tune.choice(numberOfHeadsList),
         "lr": tune.loguniform(1e-4, 1e-1),
         "batchSize": tune.choice([4, 8, 16, 32, 64, 128])}
     
@@ -144,7 +147,7 @@ def main(numberOfSamples, maximumNumberOfEpochs):
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(trainTunableRetentionTimeEstimator),
-            resources={"cpu": 16}
+            resources={"cpu": 2}
         ),
         tune_config=tune.TuneConfig(
             metric="loss",
