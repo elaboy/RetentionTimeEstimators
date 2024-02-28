@@ -10,16 +10,27 @@ class TunableAttentionRegression(torch.nn.Module):
         self.fc = torch.nn.Linear(hidden_size, output_size)
         self.sigmoid = torch.nn.Sigmoid()
 
-    def forward(self, x) -> torch.Tensor:
-        embedded = self.embedding(x)
-        outputList = []
-        for eachSequence in range(0, list(embedded.shape)[0]):
-            iteratedTensor = embedded[eachSequence, :, :]
-            lstm_out, _ = self.lstm(iteratedTensor)
-            lstm_out = lstm_out.permute(1, 0, 2)  # [seq_len, batch, hidden_size]
-            attention_output, _ = self.attention(lstm_out, lstm_out, lstm_out)
-            output = self.fc(attention_output.mean(dim=0))
-            output = self.sigmoid(output)
-            outputList.append(output)
+    # def forward(self, x) -> torch.Tensor:
+    #     embedded = self.embedding(x)
+    #     outputList = []
+    #     for eachSequence in range(0, list(embedded.shape)[0]):
+    #         iteratedTensor = embedded[eachSequence, :, :]
+    #         lstm_out, _ = self.lstm(iteratedTensor)
+    #         lstm_out = lstm_out.permute(1, 0, 2)  # [seq_len, batch, hidden_size]
+    #         attention_output, _ = self.attention(lstm_out, lstm_out, lstm_out)
+    #         output = self.fc(attention_output.mean(dim=0))
+    #         output = self.sigmoid(output)
+    #         outputList.append(output)
 
-        return torch.stack(outputList)
+    #     return torch.stack(outputList)
+    def forward(self, x) -> torch.Tensor:
+        x = x.view(-1, x.size(2)) #to make it 2D
+        embedded = self.embedding(x)
+        embedded = embedded.view(*x.size(), -1) #to make it 3D
+        lstm_out, _ = self.lstm(embedded)
+        lstm_out = lstm_out.permute(1, 0, 2)  # [seq_len, batch, hidden_size]
+        attention_output, _ = self.attention(lstm_out, lstm_out, lstm_out)
+        output = self.fc(attention_output.mean(dim=0))
+        output = self.sigmoid(output)
+
+        return output
