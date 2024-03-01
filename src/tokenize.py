@@ -12,7 +12,7 @@ def readVocabulary(filePath: string) -> dict:
 
 #Read data from a csv file and returns dataframe with full sequence (features) and retention time (target)
 def readData(filePath: string) -> pandas.DataFrame:
-    df = pandas.read_csv(filePath)
+    df = pandas.read_csv(filePath).dropna()
     fullSequenceAndRetentionTime = df[["FullSequence", "Mean"]]
     return fullSequenceAndRetentionTime
 
@@ -26,9 +26,9 @@ def getPreTokens(df: pandas.DataFrame) -> list:
             "(?<=[A-HJ-Z])\\[|(?<=\\[)[A-HJ-Z](?=\\])|(?<=[A-HJ-Z])\\](?=$|[A-Z]|(?<=\\])[^A-Z])",
                 "*", sequence)
             removedColon = regex.sub("\\*(.*?):", "*", stars)
-            preTokens.append((removedColon, row[2]))
+            preTokens.append((removedColon, row[1]))
         else:
-            preTokens.append((sequence, row[2]))
+            preTokens.append((sequence, row[1]))
 
     return preTokens
 
@@ -80,12 +80,12 @@ def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
                     modList.append(0)
                 #make 2d numpy array
                 arrayList = []
-                arrayList.append(numpy.array(tokenList))
-                arrayList.append(numpy.array(modList))
+                arrayList.append(numpy.array(tokenList, dtype=numpy.int32))
+                arrayList.append(numpy.array(modList, dtype=numpy.int32))
                 #stack the arrays
                 sequenceWithMods = numpy.vstack(arrayList)
                 #append the stacked arrays with the retention time to the tokens list
-                tokens.append((sequenceWithMods, sequence[1]))
+                tokens.append((sequenceWithMods, float(sequence[1])))
                 
     return tokens
 

@@ -106,6 +106,42 @@ def get_datasets_all():
     Returns train, validation, and testing datasets (0.8, 0.1, 0.1)
     '''
     vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
+    data = pandas.read_csv("C:\Users\elabo\Documents\MannPeptideResults\CalibratorTestingMultipleFilesSmallFiltered.csv", index_col=None, header=0)
+    preTokens = tokenize.getPreTokens(data)
+    tokens = tokenize.tokenizePreTokens(preTokens, vocab, 100, tokenize.TokenFormat.TwoDimensional)
+    train, validateAndTest = sklearn.model_selection.train_test_split(tokens, test_size=0.2)
+    validate, test = sklearn.model_selection.train_test_split(validateAndTest, test_size=0.5)
+
+    trainingSequences = []
+    trainingRetentionTimes = []
+    for i in train:
+        trainingSequences.append(i[0])
+        trainingRetentionTimes.append(i[1])
+
+    validationSequences = []
+    validationRetentionTimes = []
+    for i in validate:
+        validationSequences.append(i[0])
+        validationRetentionTimes.append(i[1])
+
+    testingSequences = []
+    testingRetentionTimes = []
+    for i in test:
+        testingSequences.append(i[0])
+        testingRetentionTimes.append(i[1])
+
+    trainingDataset = PeptidesWithRetentionTimes(trainingSequences, trainingRetentionTimes)
+    testingDataset = PeptidesWithRetentionTimes(testingSequences, testingRetentionTimes)
+    validationDataset = PeptidesWithRetentionTimes(validationSequences, validationRetentionTimes)
+
+    return trainingDataset, validationDataset, testingDataset
+
+
+def get_datasets_all_raw():
+    '''
+    Returns train, validation, and testing datasets (0.8, 0.1, 0.1)
+    '''
+    vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
     data = pandas.read_csv("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\RetentionFileDatasets.csv", index_col=None, header=0)
     preTokens = tokenize.getPreTokens(data)
     tokens = tokenize.tokenizePreTokens(preTokens, vocab, 100, tokenize.TokenFormat.TwoDimensional)
@@ -130,11 +166,7 @@ def get_datasets_all():
         testingSequences.append(i[0])
         testingRetentionTimes.append(i[1])
 
-    trainingDataset = PeptidesWithRetentionTimes(trainingSequences, trainingRetentionTimes)
-    testingDataset = PeptidesWithRetentionTimes(testingSequences, testingRetentionTimes)
-    validationDataset = PeptidesWithRetentionTimes(validationSequences, validationRetentionTimes)
-
-    return trainingDataset, validationDataset, testingDataset
+    return (trainingSequences, trainingRetentionTimes), (validationSequences, validationRetentionTimes), (testingSequences, testingRetentionTimes)
 
 def train_model(config):
     model = TunableAttentionRegression(config["input_size"],
