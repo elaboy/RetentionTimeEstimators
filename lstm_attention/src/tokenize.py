@@ -1,6 +1,95 @@
 from enum import Enum
+import re as regex
 import torch
 from src.iguaca_dataset import Iguaca_Dataset
+import pandas
+import numpy
+
+
+def tokenize(df: pandas.DataFrame, vocabularyDictionary: dict, sequenceLength: int, tokenFormat: Enum) -> list:
+    '''
+    Tokenizes the sequences in the dataframe and returns a list of tokens. 
+    Format of each item in the list: [2D numpy array (sequence, mods), retention time]
+    '''
+    preTokens = getPreTokens(df)
+    tokens = tokenizePreTokens(preTokens, vocabularyDictionary, sequenceLength, tokenFormat)
+    return tokens
+
+def getPreTokens(df: pandas.DataFrame) -> list:
+    '''
+    Removes the modification type from the full sequence and returns a list of ready-to-tokenize items.
+    '''
+    
+    preTokens = []
+    for index, row in df.iterrows():
+        sequence = str(row[0])
+        if(sequence.count("[") > 0):
+            stars = regex.sub(
+            "(?<=[A-HJ-Z])\\[|(?<=\\[)[A-HJ-Z](?=\\])|(?<=[A-HJ-Z])\\](?=$|[A-Z]|(?<=\\])[^A-Z])",
+                "*", sequence)
+            removedColon = regex.sub("\\*(.*?):", "*", stars)
+            preTokens.append((removedColon, row[1]))
+        else:
+            preTokens.append((sequence, row[1]))
+
+    return preTokens
+
+def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
+                       sequenceLength: int, tokenFormat: Enum) -> list:
+    '''
+    Tokenizes the preTokens and returns a list of tokens. 
+    Format of each item in the list: [2D numpy array (sequence, mods), retention time]
+    '''
+
+    tokens = []
+    #For now will be using the two dimensional format, need to implement the other formats later if necesary
+    if(tokenFormat == TokenFormat.TwoDimensional):
+        for sequence in preTokens:
+            tokenList = []
+            modList = []
+            #form the tokenList and the modList. 
+            #tokenList is the list of tokens for the residues and modList is 
+            #the list of tokens for the modifications
+            for subSequence in sequence[0].split("*"):
+                if("on" not in subSequence):
+                    for residue in subSequence:
+                        if(residue in vocabularyDictionary):
+                            tokenList.append(vocabularyDictionary[residue])
+                            modList.append(0)
+                        else:
+                            tokenList.clear()
+                            modList.clear()
+                            break
+                else:
+                    if(subSequence in vocabularyDictionary):
+                        if(subSequence[len(subSequence)-1] == "X"):
+                            tokenList.append(22)
+                            modList.append(vocabularyDictionary[subSequence])
+                        elif(subSequence[len(subSequence)-1] == "U"):
+                            tokenList.append(21)
+                            modList.append(0)
+                        else:
+                            tokenList.append(vocabularyDictionary[subSequence[len(subSequence)-1]])
+                            modList.append(vocabularyDictionary[subSequence])
+                    else:
+                        tokenList.clear()
+                        modList.clear()
+                        break
+            #if the sequence is less than the sequence length, pad it with zeros
+            if(len(tokenList) != 0):
+                while(len(tokenList) != sequenceLength and len(modList) < sequenceLength):
+                    tokenList.append(0)
+                    modList.append(0)
+                #make 2d numpy array
+                arrayList = []
+                arrayList.append(numpy.array(tokenList, dtype=numpy.int32))
+                arrayList.append(numpy.array(modList, dtype=numpy.int32))
+                #stack the arrays
+                sequenceWithMods = numpy.vstack(arrayList)
+                #append the stacked arrays with the retention time to the tokens list
+                tokens.append((sequenceWithMods, float(sequence[1])))
+                
+    return tokens
 
 def read_batched_tensor_get_chronologer_format(dataset: 'Iguaca_Dataset', vocab: dict) -> list:
     '''
