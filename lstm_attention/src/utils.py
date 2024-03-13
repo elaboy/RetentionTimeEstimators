@@ -1,6 +1,33 @@
 import torch 
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
+import pandas as pd
+
+def load_psmtsv_get_full_sequence_retention_time(path: str) -> pd.DataFrame: 
+    '''
+    Loads the dataset from a .psmtsv file and returns the full sequence retention time as a pandas dataframe.
+    Drops ambiguous sequences.
+    '''
+    dataset = pd.read_csv(path, sep='\t')
+    dataset = dataset.where(dataset["Ambiguity"] == str(1))
+    dataset = dataset[['Full Sequence', 'Scan Retention Time']]
+    
+    return dataset
+
+def load_psmtsv_save_dataset(path: str, verbose = True) -> torch.utils.data.Dataset:
+    '''
+    Loads the dataset from a .psmtsv file as a pandas dataframe, formats into lstm attention format compatible dataset,
+    and saves it to a .pt file.
+    '''
+    dataset = torch.load(path)
+    
+    if verbose:
+        print(f"Dataset loaded from: {path}")
+        #print dataset length and shape of the first item in the dataset
+        print(f"Length of dataset: {len(dataset)}")
+        print(f"Shape of first item in dataset: {dataset[0][0].shape}")
+
+    return dataset
 
 def save_dataset(dataset: torch.utils.data.Dataset, path: str, verbose = True) -> None:
     '''
