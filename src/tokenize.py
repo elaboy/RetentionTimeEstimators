@@ -10,6 +10,12 @@ def readVocabulary(filePath: string) -> dict:
     vocabularyDictionary = df.to_dict()["Id"]
     return vocabularyDictionary
 
+def get_swap_dict(d):
+    return {v: k for k, v in d.items()}
+
+def get_aa_vocab() -> dict:
+    return get_swap_dict(aa)
+
 #Read data from a csv file and returns dataframe with full sequence (features) and retention time (target)
 def readData(filePath: string) -> pandas.DataFrame:
     df = pandas.read_csv(filePath).dropna()
