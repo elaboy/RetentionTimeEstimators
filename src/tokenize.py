@@ -54,7 +54,7 @@ def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
             #form the tokenList and the modList. 
             #tokenList is the list of tokens for the residues and modList is 
             #the list of tokens for the modifications
-            for subSequence in sequence[0].split("*"):
+            for subSequence in sequence[1].split("*"):
                 if("on" not in subSequence):
                     for residue in subSequence:
                         if(residue in vocabularyDictionary):
@@ -91,14 +91,18 @@ def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
                 #stack the arrays
                 sequenceWithMods = numpy.vstack(arrayList)
                 #append the stacked arrays with the retention time to the tokens list
-                tokens.append((sequenceWithMods, float(sequence[1])))
+                tokens.append((sequenceWithMods, float(sequence[0])))
                 
     return tokens
+
+
 
 class TokenFormat(Enum):
     OneDimensionalRedundant = 1, #mods are in the same dimension as the residues and are redundant(residue,mod) 
     OneDimensionalNonRedundant = 2, #mods are in the same dimension as the residues and are not redundant(modWithResidue) 
     TwoDimensional = 3 #mods are in a separate dimension from the residues
+
+
 
 #utils
 aa = {"A":1,"C":2,"D":3, "E":4, "F":5, "G":6, "H":7,

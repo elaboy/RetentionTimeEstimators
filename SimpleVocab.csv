@@ -1,0 +1,224 @@
+Id,Token
+0,PAD
+1,A
+2,C
+3,D
+4,E
+5,F
+6,G
+7,H
+8,I
+9,K
+10,L
+11,M
+12,N
+13,P
+14,Q
+15,R
+16,S
+17,T
+18,V
+19,W
+20,Y
+21,U
+22,X
+23,Acetyl on C
+24,Acetyl on H
+25,Acetyl on K
+26,Acetyl on R
+27,Acetyl on S
+28,Acetyl on T
+29,Acetyl on X
+30,Acetyl on Y
+31,Amidated on X
+32,Amidine on K
+33,Amidine on X
+34,Amidino on C
+35,Amino on Y
+36,Ammonia-loss on C
+37,Ammonia-loss on N
+38,Ammonia-loss on S
+39,Ammonia-loss on T
+40,Ammonium on D
+41,Ammonium on E
+42,Ammonium on X
+43,Carbamidomethyl on C
+44,Carbamidomethyl on D
+45,Carbamidomethyl on E
+46,Carbamidomethyl on H
+47,Carbamidomethyl on K
+48,Carbamidomethyl on M
+49,Carbamidomethyl on S
+50,Carbamidomethyl on T
+51,Carbamidomethyl on U
+52,Carbamidomethyl on X
+53,Carbamidomethyl on Y
+54,Carbamyl on C
+55,Carbamyl on K
+56,Carbamyl on M
+57,Carbamyl on R
+58,Carbamyl on S
+59,Carbamyl on T
+60,Carbamyl on X
+61,Carbamyl on Y
+62,Carbofuran on S
+63,Carbonyl on A
+64,Carbonyl on E
+65,Carbonyl on I
+66,Carbonyl on L
+67,Carbonyl on Q
+68,Carbonyl on R
+69,Carbonyl on S
+70,Carbonyl on V
+71,Carboxy on D
+72,Carboxy on E
+73,Carboxy on K
+74,Carboxy on M
+75,Carboxy on W
+76,Carboxyethyl on H
+77,Carboxyethyl on K
+78,Carboxyethylpyrrole on K
+79,Carboxymethyl on C
+80,Carboxymethyl on K
+81,Carboxymethyl on U
+82,Carboxymethyl on W
+83,Carboxymethyl on X
+84,Deamidated on F
+85,Deamidated on N
+86,Deamidated on Q
+87,Deamidated on R
+88,Decanoyl on S
+89,Decanoyl on T
+90,Decarboxylation on D
+91,Decarboxylation on E
+92,Dehydrated on C
+93,Dehydrated on D
+94,Dehydrated on N
+95,Dehydrated on Q
+96,Dehydrated on S
+97,Dehydrated on T
+98,Dehydrated on Y
+99,Dehydro on C
+100,Dicarbamidomethyl on C
+101,Dicarbamidomethyl on H
+102,Dicarbamidomethyl on K
+103,Dicarbamidomethyl on R
+104,Dicarbamidomethyl on X
+105,dichlorination on C
+106,dichlorination on Y
+107,Didehydro on K
+108,Didehydro on S
+109,Didehydro on T
+110,Didehydro on Y
+111,Didehydroretinylidene on K
+112,Diethyl on K
+113,Diethyl on X
+114,Diethylphosphate on C
+115,Diethylphosphate on H
+116,Diethylphosphate on K
+117,Diethylphosphate on S
+118,Diethylphosphate on T
+119,Diethylphosphate on X
+120,Diethylphosphate on Y
+121,Diethylphosphothione on C
+122,Diethylphosphothione on H
+123,Diethylphosphothione on K
+124,Diethylphosphothione on S
+125,Diethylphosphothione on T
+126,Diethylphosphothione on Y
+127,Dioxidation on C
+128,Dioxidation on E
+129,Dioxidation on F
+130,Dioxidation on I
+131,Dioxidation on K
+132,Dioxidation on L
+133,Dioxidation on M
+134,Dioxidation on P
+135,Dioxidation on R
+136,Dioxidation on U
+137,Dioxidation on V
+138,Dioxidation on W
+139,Dioxidation on Y
+140,Ethanedithiol on S
+141,Ethanedithiol on T
+142,Ethanolamine on C
+143,Ethanolamine on D
+144,Ethanolamine on E
+145,Ethanolamine on X
+146,Ethanolyl on C
+147,Ethanolyl on K
+148,Ethanolyl on R
+149,Ethyl on D
+150,Ethyl on E
+151,Ethyl on K
+152,Ethyl on X
+153,Ethyl+Deamidated on N
+154,Ethyl+Deamidated on Q
+155,Methyl on C
+156,Methyl on D
+157,Methyl on E
+158,Methyl on H
+159,Methyl on I
+160,Methyl on K
+161,Methyl on L
+162,Methyl on N
+163,Methyl on Q
+164,Methyl on R
+165,Methyl on S
+166,Methyl on T
+167,Methyl on X
+168,Oxidation on C
+169,Oxidation on D
+170,Oxidation on E
+171,Oxidation on F
+172,Oxidation on G
+173,Oxidation on H
+174,Oxidation on I
+175,Oxidation on K
+176,Oxidation on L
+177,Oxidation on M
+178,Oxidation on N
+179,Oxidation on P
+180,Oxidation on Q
+181,Oxidation on R
+182,Oxidation on S
+183,Oxidation on T
+184,Oxidation on U
+185,Oxidation on V
+186,Oxidation on W
+187,Oxidation on Y
+188,Phospho on C
+189,Phospho on D
+190,Phospho on E
+191,Phospho on H
+192,Phospho on K
+193,Phospho on R
+194,Phospho on S
+195,Phospho on T
+196,Phospho on Y
+197,Pyro-carbamidomethyl on C
+198,pyrophospho on S
+199,pyrophospho on T
+200,Succinyl on K
+201,Succinyl on X
+202,SulfanilicAcid on D
+203,SulfanilicAcid on E
+204,SulfanilicAcid on X
+205,Sulfide on C
+206,Sulfide on D
+207,Sulfide on W
+208,Sulfo on C
+209,Sulfo on S
+210,Sulfo on T
+211,Sulfo on Y
+212,sulfo+amino on Y
+213,trifluoro on L
+214,Triiodo on Y
+215,Triiodothyronine on Y
+216,Trimethyl on A
+217,Trimethyl on K
+218,Trimethyl on R
+219,Trioxidation on C
+220,Trioxidation on F
+221,Trioxidation on W
+222,Trioxidation on Y
