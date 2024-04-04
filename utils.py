@@ -20,7 +20,8 @@ class PeptidesWithRetentionTimes(torch.utils.data.Dataset):
 
 class Tokenizer(object):
     '''
-    Tokenizer contains all methods related to tokenizing the sequences and preparing them for the model.
+    Tokenizer contains all methods related to tokenizing the sequences
+    and preparing them for the model.
     '''
 
     @staticmethod
@@ -56,7 +57,8 @@ class Tokenizer(object):
             if(sequence.count("[") > 0):
                 stars = regex.sub(
                 "(?<=[A-HJ-Z])\\[|(?<=\\[)[A-HJ-Z](?=\\])|(?<=[A-HJ-Z])\\](?=$|[A-Z]|(?<=\\])[^A-Z])",
-                    "*", sequence)
+                    "*",
+                      sequence)
                 removedColon = regex.sub("\\*(.*?):", "*", stars)
                 preTokens.append((removedColon, row[1]))
             else:
