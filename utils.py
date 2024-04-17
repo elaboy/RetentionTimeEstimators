@@ -122,7 +122,20 @@ class Tokenizer(object):
                     sequenceWithMods = numpy.vstack(arrayList)
                     #append the stacked arrays with the retention time to the tokens list
                     tokens.append((sequenceWithMods, float(sequence[0])))
-                    
+
+        elif(tokenFormat == TokenFormat.OneDimNoMod):
+            for sequence in preTokens:
+                tokenList = []
+                for residue in sequence[0]:
+                    if(residue in vocabularyDictionary):
+                        tokenList.append(vocabularyDictionary[residue])
+                    else:
+                        tokenList.clear()
+                        break
+                if(len(tokenList) != 0):
+                    while(len(tokenList) != sequenceLength):
+                        tokenList.append(0)
+                    tokens.append((numpy.array(tokenList, dtype=numpy.int32), sequence[1]))
         return tokens
     
     @staticmethod
@@ -141,7 +154,8 @@ class Tokenizer(object):
         return torch.tensor(gravy_score, dtype=torch.float32)
     
     @staticmethod
-    def run_tokenizer(filePath: string, vocabPath: string, sequenceLength: int, tokenFormat: Enum) -> PeptidesWithRetentionTimes:
+    def run_tokenizer(filePath: string, vocabPath: string,
+                       sequenceLength: int, tokenFormat: Enum) -> PeptidesWithRetentionTimes:
         psmtsv_df = Tokenizer.read_psmtsv(filePath)
         vocab = Tokenizer.readVocabulary(vocabPath)
         preTokens = Tokenizer.getPreTokens(psmtsv_df)
@@ -151,7 +165,8 @@ class Tokenizer(object):
 
     @staticmethod
     def run_tokenizer(filePath: string, vocabPath: string, sequenceLength: int, tokenFormat: Enum,
-                    training_split: float = 0.8, validation_split: float = 0.5, testing_split: float = 0.5, random_state: int = 42) -> PeptidesWithRetentionTimes:
+                    training_split: float = 0.8, validation_split: float = 0.5,
+                      testing_split: float = 0.5, random_state: int = 42) -> PeptidesWithRetentionTimes:
         psmtsv_df = Tokenizer.read_psmtsv(filePath)
         
         #split into training, testing and validation sets
@@ -177,7 +192,9 @@ class Tokenizer(object):
         validation_sequences, validation_retention_times = Tokenizer.prepare_datasets(validation_tokens)
         testing_sequences, testing_retention_times = Tokenizer.prepare_datasets(testing_tokens)
 
-        return PeptidesWithRetentionTimes(training_sequences, training_retention_times), PeptidesWithRetentionTimes(validation_sequences, validation_retention_times), PeptidesWithRetentionTimes(testing_sequences, testing_retention_times)
+        return PeptidesWithRetentionTimes(training_sequences, training_retention_times), \
+                PeptidesWithRetentionTimes(validation_sequences, validation_retention_times), \
+                PeptidesWithRetentionTimes(testing_sequences, testing_retention_times)
     
     @staticmethod
     def prepare_datasets(tokens: list):
@@ -193,8 +210,8 @@ class Tokenizer(object):
 class TokenFormat(Enum):
     OneDimensionalRedundant = 1, #mods are in the same dimension as the residues and are redundant(residue,mod) 
     OneDimensionalNonRedundant = 2, #mods are in the same dimension as the residues and are not redundant(modWithResidue) 
-    TwoDimensional = 3 #mods are in a separate dimension from the residues
-
+    TwoDimensional = 3, #mods are in a separate dimension from the residues
+    OneDimNoMod = 4 #no modifications
 aa = {"A":1,"C":2,"D":3, "E":4, "F":5, "G":6, "H":7,
                         "I":8, "K":9, "L":10, "M":11, "N":12, "P":13,
                         "Q":14, "R":15, "S":16, "T":17, "V":18, "W":19, "Y":20,
