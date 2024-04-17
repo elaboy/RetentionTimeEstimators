@@ -18,6 +18,12 @@ class PeptidesWithRetentionTimes(torch.utils.data.Dataset):
         retentionTime = self.retentionTimes[index]
         return peptide, retentionTime
 
+def padTensorBatchAfterCNN(batch, targetLength) -> torch.Tensor:
+    padded = torch.zeros((len(batch), targetLength), dtype=torch.int64)
+    for i, sequence in enumerate(batch):
+        padded[i, :len(sequence)] = sequence
+    return padded
+
 class Tokenizer(object):
     '''
     Tokenizer contains all methods related to tokenizing the sequences
