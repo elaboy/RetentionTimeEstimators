@@ -5,31 +5,18 @@ import ray
 from torchmetrics import Accuracy
 import utils
 
-#datasets to be used for all models 
-vocab = utils.Tokenizer.readVocabulary("SimpleVocab.csv")
-
-#tokenize the data
-training, validation, testing = utils.Tokenizer.run_tokenizer(filePath="sequence_iRT_noMods_wihoutBiggestThree.tsv",
-                                        vocabPath="SimpleVocab.csv", 
-                                            sequenceLength=50,
-                                                tokenFormat= utils.TokenFormat.OneDimNoMod)
-
-#make them dataloaders
-training = torch.utils.data.DataLoader(training, batch_size=128, shuffle=True, drop_last=True)
-validation = torch.utils.data.DataLoader(validation, batch_size=128, shuffle=False, drop_last=True)
-testing = torch.utils.data.DataLoader(testing, batch_size=128, shuffle=False, drop_last=True)
-
-#models to test
 class ResNetBlockKaimingNormalFanOut(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
+        
+        self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -51,15 +38,17 @@ class ResNetBlockKaimingNormalFanOut(nn.Module):
         return x
     
 class ResNetBlockKaimingNormalFanIn(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -81,15 +70,17 @@ class ResNetBlockKaimingNormalFanIn(nn.Module):
         return x
     
 class ResNetBlockKaimingUniformFanOut(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -111,15 +102,17 @@ class ResNetBlockKaimingUniformFanOut(nn.Module):
         return x
     
 class ResNetBlockKaimingUniformFanIn(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -141,15 +134,17 @@ class ResNetBlockKaimingUniformFanIn(nn.Module):
         return x
     
 class ResNetBlockXavierNormal(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -171,15 +166,17 @@ class ResNetBlockXavierNormal(nn.Module):
         return x
     
 class ResNetBlockXavierUniform(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -201,15 +198,17 @@ class ResNetBlockXavierUniform(nn.Module):
         return x
     
 class ResNetBlockOrthogonal(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -231,15 +230,17 @@ class ResNetBlockOrthogonal(nn.Module):
         return x
     
 class ResNetBlockSparse(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -261,15 +262,17 @@ class ResNetBlockSparse(nn.Module):
         return x
     
 class ResNetBlockSparseDense(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -291,15 +294,17 @@ class ResNetBlockSparseDense(nn.Module):
         return x
     
 class ResNetBlockNormalInit(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -321,15 +326,17 @@ class ResNetBlockNormalInit(nn.Module):
         return x
 
 class ResNetBlockRandomInit(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride):
+    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
         self.stride = stride
         
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride)
+        self.bias = bias
+
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
