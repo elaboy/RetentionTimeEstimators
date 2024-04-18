@@ -6,6 +6,20 @@ from torch import nn
 import ResNetBlocks
 from enum import Enum
 
+class DimSwap(nn.Module):
+    def __init__(self):
+        super(DimSwap, self).__init__()
+
+    def forward(self, x):
+        return x.permute(0, 2, 1)
+
+class ColapseLastTwoDims(nn.Module):
+    def __init__(self):
+        super(ColapseLastTwoDims, self).__init__()
+
+    def forward(self, x):
+        return x.view(x.size(0), x.size(1)*x.size(2))
+
 class ResNetBlockLayer(object):
     @staticmethod
     def getNKaimingNormalFanOut(config):
@@ -14,7 +28,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockKaimingNormalFanOut(in_channels=config["embedding_layer_hidden_dim"],
                                                                     out_channels=config["embedding_layer_hidden_dim"],
                                                                     kernel_size=config["kernel_size"],
-                                                                    stride=config["stride"],
+                                                                    
                                                                     
                                                                     bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -28,7 +42,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockKaimingNormalFanIn(in_channels=config["embedding_layer_hidden_dim"],
                                                                     out_channels=config["embedding_layer_hidden_dim"],
                                                                     kernel_size=config["kernel_size"],
-                                                                    stride=config["stride"],
+                                                                    
                                                                     
                                                                     bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -42,7 +56,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockKaimingUniformFanOut(in_channels=config["embedding_layer_hidden_dim"],
                                                                     out_channels=config["embedding_layer_hidden_dim"],
                                                                     kernel_size=config["kernel_size"],
-                                                                    stride=config["stride"],
+                                                                    
                                                                     
                                                                     bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -56,7 +70,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockKaimingUniformFanIn(in_channels=config["embedding_layer_hidden_dim"],
                                                                     out_channels=config["embedding_layer_hidden_dim"],
                                                                     kernel_size=config["kernel_size"],
-                                                                    stride=config["stride"],
+                                                                    
                                                                     
                                                                     bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -70,7 +84,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockXavierNormal(in_channels=config["embedding_layer_hidden_dim"],
                                                                 out_channels=config["embedding_layer_hidden_dim"],
                                                                 kernel_size=config["kernel_size"],
-                                                                stride=config["stride"],
+                                                                
                                                                 
                                                                 bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -84,7 +98,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockXavierUniform(in_channels=config["embedding_layer_hidden_dim"],
                                                                     out_channels=config["embedding_layer_hidden_dim"],
                                                                     kernel_size=config["kernel_size"],
-                                                                    stride=config["stride"],
+                                                                    
                                                                     
                                                                     bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -98,7 +112,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockOrthogonal(in_channels=config["embedding_layer_hidden_dim"],
                                                             out_channels=config["embedding_layer_hidden_dim"],
                                                             kernel_size=config["kernel_size"],
-                                                            stride=config["stride"],
+                                                            
                                                             
                                                             bias=config["bias"]))
         return nn.Sequential(*layers)
@@ -110,7 +124,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockSparse(in_channels=config["embedding_layer_hidden_dim"],
                                                         out_channels=config["embedding_layer_hidden_dim"],
                                                         kernel_size=config["kernel_size"],
-                                                        stride=config["stride"],
+                                                        
                                                         
                                                         bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -124,7 +138,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockSparseDense(in_channels=config["embedding_layer_hidden_dim"],
                                                             out_channels=config["embedding_layer_hidden_dim"],
                                                             kernel_size=config["kernel_size"],
-                                                            stride=config["stride"],
+                                                            
                                                             
                                                             bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -138,7 +152,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockNormalInit(in_channels=config["embedding_layer_hidden_dim"],
                                                             out_channels=config["embedding_layer_hidden_dim"],
                                                             kernel_size=config["kernel_size"],
-                                                            stride=config["stride"],
+                                                            
                                                             
                                                             bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
@@ -152,7 +166,7 @@ class ResNetBlockLayer(object):
             layers.append(ResNetBlocks.ResNetBlockRandomInit(in_channels=config["embedding_layer_hidden_dim"],
                                                             out_channels=config["embedding_layer_hidden_dim"],
                                                             kernel_size=config["kernel_size"],
-                                                            stride=config["stride"],
+                                                            
                                                             bias=config["bias"]))
             layers.append(PaddingLayers.getZeroPadding1d(config))
         
@@ -280,7 +294,7 @@ class RecurrentLayers(object):
 class PaddingLayers(object):
     @staticmethod
     def getZeroPadding1d(config):
-        return nn.ZeroPad1d(padding = config["padding"])
+        return nn.ZeroPad1d(padding = config["stride"])
 
 def getMultiHeadAttention(config):
     layers = []

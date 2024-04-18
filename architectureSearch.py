@@ -5,21 +5,13 @@ import ray
 from ray import tune
 from ray.tune import CLIReporter
 from ray.tune.schedulers import ASHAScheduler
-import pytorch_lightning as pl
 import BuildingBlocks
 from BuildingBlocks import ResNetBlockLayer, NormalizarionLayers
-from ray.train.lightning import (
-    RayDDPStrategy,
-    RayLightningEnvironment,
-    RayTrainReportCallback,
-    prepare_trainer,
-)
 from ray.train import RunConfig, ScalingConfig, CheckpointConfig
 from ray.train.torch import TorchTrainer
-
-from ray.train.lightning import RayDDPStrategy
-from torch.distributed.fsdp import FullStateDictConfig
-FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
+import os
+import tempfile
+from ray import train, tune
 
 
 #define a search space
@@ -69,7 +61,7 @@ searchSpace = {
     }
 
 # Define PyTorch Lightning Module
-class Explorer(pl.LightningModule):
+class Explorer(nn.Module):
     def __init__(self, config):
         super(Explorer, self).__init__()
         self.config = config
@@ -110,97 +102,123 @@ class Explorer(pl.LightningModule):
         #if attention is true, add attention layer
         if self.Attention:
             layers.append(nn.MultiheadAttention(self.embedding_layer_hidden_dim, self.attention_num_heads, 
-                                                dropout=self.attention_dropout))
+                                                dropout=self.attention_dropout, batch_first=True))
         
+        #reshape tensor before passing to resnet blocks
+        layers.append(BuildingBlocks.DimSwap())
+
         #add resnet blocks
         for _ in range(self.num_layers):
             layers.append(self.resnetInitType(self.config))
         
-        #dropout layer
-        layers.append(nn.Dropout(self.dropout, inplace=self.dropout_inplace))
+        #collapse last dimensions to end with a 2D tensor
+
+
+        # #dropout layer
+        # layers.append(nn.Dropout(self.dropout, inplace=self.dropout_inplace))
 
         #lstm layer
         if self.lstm:
             layers.append(nn.LSTM(self.embedding_layer_hidden_dim, self.embedding_layer_hidden_dim))
         
         #output layer, take last layer size and output 1
-        layers.append(nn.Linear(self.embedding_layer_hidden_dim, 1))
+        layers.append(nn.Linear(self.embedding_layer_hidden_dim*self.embedding_layer_hidden_dim, 1))
 
         return nn.Sequential(*layers)
 
     def forward(self, x):
         return self.model(x)
-
-    def training_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
-        loss = self.loss(y_hat, y.unsqueeze(1))
-        self.log("train_loss", loss, on_epoch=True)
-        return loss
-
-    def validation_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
-        loss = self.loss(y_hat, y.unsqueeze(1))
-        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
-        return loss
     
-    def test_step(self, batch, batch_idx):
-        x, y = batch
-        y_hat = self.model(x)
-        loss = self.loss(y_hat, y.unsqueeze(1))
-        self.log("test_loss", loss, on_epoch=True)
-        return loss
-    
-    def configure_optimizers(self):
-        optimizer = self.config["optimizer"](self.parameters(), lr=self.config["learning_rate"],
-                                              weight_decay=self.config["weight_decay"])
-        scheduler = self.config["scheduler"](optimizer, step_size=self.config["scheduler_step_size"])
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": { "scheduler": scheduler,
-                             "monitor": "val_loss"  # Optional: LR scheduler can be tied to a specific metric 
-                            }
-            }
-
 vocab = utils.Tokenizer.readVocabulary(r"/mnt/f/RetentionTimeProject/SimpleVocab.csv")
 
 
 # Define the Trainable Function
 def train_model(config):
-    #datasets to be used for all models 
 
+    device = "cpu"
+    if torch.cuda.is_available():
+        device = "cuda:0"
+
+    model = Explorer(config).to(device)
+
+    optimizer = config['optimizer'](model.parameters(), lr=config['learning_rate'], weight_decay=config['weight_decay'])
+
+    criterion = config['loss']()
     #tokenize the data
     training, validation, testing = utils.Tokenizer.run_tokenizer(
         filePath=r"/mnt/f/RetentionTimeProject/sequence_iRT_noMods_wihoutBiggestThree.tsv",
             vocabPath=r"/mnt/f/RetentionTimeProject/SimpleVocab.csv", 
                 sequenceLength=50,
                     tokenFormat= utils.TokenFormat.OneDimNoMod)
-    #make them dataloaders
-    training = torch.utils.data.DataLoader(training, batch_size=32, shuffle=True, drop_last=True)
-    validation = torch.utils.data.DataLoader(validation, batch_size=32, shuffle=False, drop_last=True)
-    testing = torch.utils.data.DataLoader(testing, batch_size=32, shuffle=False, drop_last=True)
     
-    # Initialize PyTorch Lightning module with the config
-    model = Explorer(config)
-    # strategy = RayDDPStrategy(num_nodes=1, use_gpu=True, num_cpus_per_worker=1)
-    plugin = RayLightningEnvironment
-    callback = RayTrainReportCallback
+    batchSize = config['batch_size']
 
-    # Define PyTorch Lightning Trainer
-    trainer = pl.Trainer(
-        accelerator="gpu",
-        strategy='RayFSDPStrategy',
-        # plugins=plugin,
-        # callbacks=callback,
-        enable_progress_bar=False,
-    )
+    #make them dataloaders
+    training = torch.utils.data.DataLoader(training, batch_size=batchSize, shuffle=True, drop_last=True)
+    validation = torch.utils.data.DataLoader(validation, batch_size=batchSize, shuffle=False, drop_last=True)
+    testing = torch.utils.data.DataLoader(testing, batch_size=batchSize, shuffle=False, drop_last=True)
+    
 
-    trainer = prepare_trainer(trainer)
+    for epoch in range(10):  # loop over the dataset multiple times
+        running_loss = 0.0
+        epoch_steps = 0
+        for i, data in enumerate(training):
+            # get the inputs; data is a list of [inputs, labels]
+            inputs, labels = data
+            inputs, labels = inputs.to(device), labels.to(device)
 
-    # Train the model
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-    trainer.fit(model, training, validation)
+            # forward + backward + optimize
+            outputs = model(inputs)
+            loss = criterion(outputs, labels.unsqueeze(1))
+            loss.backward()
+            optimizer.step()
+
+            # print statistics
+            running_loss += loss.item()
+            epoch_steps += 1
+            if i % 2000 == 1999:  # print every 2000 mini-batches
+                print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1,
+                                                running_loss / epoch_steps))
+                running_loss = 0.0
+        
+        # Validation loss
+        val_loss = 0.0
+        val_steps = 0
+        total = 0
+        correct = 0
+        for i, data in enumerate(validation, 0):
+            with torch.no_grad():
+                inputs, labels = data
+                inputs, labels = inputs.to(device), labels.to(device)
+
+                outputs = model(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+                loss = criterion(outputs, labels)
+                val_loss += loss.cpu().numpy()
+                val_steps += 1
+
+        # Here we save a checkpoint. It is automatically registered with
+        # Ray Tune and will potentially be accessed through in ``get_checkpoint()``
+        # in future iterations.
+        # Note to save a file like checkpoint, you still need to put it under a directory
+        # to construct a checkpoint.
+        with tempfile.TemporaryDirectory() as temp_checkpoint_dir:
+            path = os.path.join(temp_checkpoint_dir, "checkpoint.pt")
+            torch.save(
+                (model.state_dict(), optimizer.state_dict()), path
+            )
+            checkpoint = criterion.from_directory(temp_checkpoint_dir)
+            train.report(
+                {"loss": (val_loss / val_steps), "accuracy": correct / total},
+                checkpoint=checkpoint,
+            )
+    print("Finished Training")
 
 # Define a function to generate a descriptive name for the directory
 def generate_trial_name(trial):
@@ -226,46 +244,30 @@ def generate_trial_name(trial):
 #shutdown ray??? is that necesary?
 
 if __name__ == "__main__":    
-    # Set up Ray Tune
-    ray.init()
-
-    from ray.train.torch import TorchTrainer
-
-    scaling_config = ScalingConfig(
-    num_workers=1, use_gpu=True, resources_per_worker={"GPU": 1})
-
-    run_config = RunConfig(
-        checkpoint_config=CheckpointConfig(
-            num_to_keep=2,
-            checkpoint_score_attribute="ptl/val_accuracy",
-            checkpoint_score_order="max",
-            ),
-        )
+    scheduler = ASHAScheduler(
+        max_t=10,
+        grace_period=1,
+        reduction_factor=2)
     
-    ray_trainer = TorchTrainer(train_model,
-                                scaling_config=scaling_config,
-                                run_config=run_config)
-
     tuner = tune.Tuner(
-        ray_trainer,
-        param_space={"train_loop_config": searchSpace},
+        tune.with_resources(
+            tune.with_parameters(train_model),
+            resources={"cpu": 6, "gpu": 0.25}
+        ),
         tune_config=tune.TuneConfig(
-            metric="ptl/val_accuracy",
-            mode="max",
+            metric="loss",
+            mode="min",
+            scheduler=scheduler,
             num_samples=20,
         ),
+        param_space=searchSpace,
     )
+    results = tuner.fit()
+    
+    best_result = results.get_best_result("loss", "min")
 
-    tuner.fit()
-
-
-    # Evaluate Results
-    # best_trial = tuner.get_best_trial(metric="mean_accuracy", mode="max")
-    # best_config = best_trial.config
-    # best_accuracy = best_trial.last_result["mean_accuracy"]
-
-    # print("Best configuration:", best_config)
-    # print("Best validation accuracy:", best_accuracy)
-
-    # Shut down Ray
-    ray.shutdown()
+    print("Best trial config: {}".format(best_result.config))
+    print("Best trial final validation loss: {}".format(
+        best_result.metrics["loss"]))
+    print("Best trial final validation accuracy: {}".format(
+        best_result.metrics["accuracy"]))

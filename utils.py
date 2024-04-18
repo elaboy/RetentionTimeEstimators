@@ -19,10 +19,11 @@ class PeptidesWithRetentionTimes(torch.utils.data.Dataset):
         return peptide, retentionTime
 
 def padTensorBatchAfterCNN(batch, targetLength) -> torch.Tensor:
-    padded = torch.zeros((len(batch), targetLength), dtype=torch.int64)
-    for i, sequence in enumerate(batch):
-        padded[i, :len(sequence)] = sequence
-    return padded
+    '''
+    Pads the tensor batch after the CNN layer with zeros
+    '''
+
+    return torch.nn.functional.pad(batch, (0 , 0, 0, 0, 0, batch.size(2) - batch.size(2)))
 
 class Tokenizer(object):
     '''

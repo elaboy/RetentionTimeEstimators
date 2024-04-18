@@ -6,17 +6,17 @@ from torchmetrics import Accuracy
 import utils
 
 class ResNetBlockKaimingNormalFanOut(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -28,27 +28,29 @@ class ResNetBlockKaimingNormalFanOut(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockKaimingNormalFanIn(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -60,27 +62,29 @@ class ResNetBlockKaimingNormalFanIn(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockKaimingUniformFanOut(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -92,27 +96,29 @@ class ResNetBlockKaimingUniformFanOut(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockKaimingUniformFanIn(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -124,27 +130,29 @@ class ResNetBlockKaimingUniformFanIn(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockXavierNormal(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -156,27 +164,29 @@ class ResNetBlockXavierNormal(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockXavierUniform(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -188,27 +198,29 @@ class ResNetBlockXavierUniform(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockOrthogonal(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -220,27 +232,29 @@ class ResNetBlockOrthogonal(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockSparse(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -252,27 +266,29 @@ class ResNetBlockSparse(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockSparseDense(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -284,27 +300,29 @@ class ResNetBlockSparseDense(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
     
 class ResNetBlockNormalInit(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -316,27 +334,29 @@ class ResNetBlockNormalInit(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
 
 class ResNetBlockRandomInit(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride,  bias):
+    def __init__(self, in_channels, out_channels, kernel_size,   bias):
         super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.kernel_size = kernel_size
-        self.stride = stride
+        
         
         self.bias = bias
 
-        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride,  bias=bias)
-        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size, stride,  bias=bias)
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size,   bias=bias)
+        self.conv2 = nn.Conv1d(out_channels, out_channels, kernel_size,   bias=bias)
         self.batchNorm1 = nn.BatchNorm1d(out_channels)
         self.batchNorm2 = nn.BatchNorm1d(out_channels)
         self.relu = nn.ReLU()
@@ -344,11 +364,13 @@ class ResNetBlockRandomInit(nn.Module):
     def forward(self, x):
         residual = x
         x = self.conv1(x)
+        x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm1(x)
         x = self.relu(x)
         x = self.conv2(x)
-        x = self.batchNorm2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        x = self.batchNorm2(x)
+        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
