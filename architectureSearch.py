@@ -26,13 +26,10 @@ searchSpace = {
         ResNetBlockLayer.getNXavierUniform,
         ResNetBlockLayer.getNXavierNormal,
         ResNetBlockLayer.getNOrthogonal,
-        ResNetBlockLayer.getNSparse,
+        # ResNetBlockLayer.getNSparse,
         ResNetBlockLayer.getNNormalInit,
         ResNetBlockLayer.getNRandomInit]),
-    "kernel_size" : tune.choice([1,2,3]),
-    "stride" : tune.choice([1,2,3]),
-    "padding" : tune.choice([1,2,3]),
-    "dilation" : tune.choice([1,2,3]),
+    "kernel_size" : tune.choice([1]),
     "groups" : tune.choice([1,2,3]),
     "bias" : tune.choice([True, False]),
     "normalization_layer" : tune.choice([
@@ -40,12 +37,12 @@ searchSpace = {
         NormalizarionLayers.getGroupNorm,
         NormalizarionLayers.getSyncBatchNorm,
         NormalizarionLayers.getLayerNorm]),
-    "Attention" : tune.choice([True, False]),
-    "attention_num_heads" : tune.choice([2, 4, 8, 16, 32]), #number of heads in the attention mechanism
-    "attention_dropout" : tune.choice([0.1, 0.2, 0.3, 0.4, 0.5]), #dropout in the attention mechanism
+    # "Attention" : tune.choice([True, False]),
+    # "attention_num_heads" : tune.choice([2, 4, 8, 16, 32]), #number of heads in the attention mechanism
+    # "attention_dropout" : tune.choice([0.1, 0.2, 0.3, 0.4, 0.5]), #dropout in the attention mechanism
     "dropout" : tune.choice([0.1, 0.2, 0.3, 0.4, 0.5]),
     "dropout_inplace" : tune.choice([True, False]), #dropout inplace parameter
-    "lstm" : tune.choice([True, False]), #use lstm
+    # "lstm" : tune.choice([True, False]), #use lstm
     "activation" : tune.choice([nn.ReLU, nn.Sigmoid, nn.Tanh, nn.LeakyReLU, nn.ELU]),
     "optimizer" : tune.choice([torch.optim.Adam, torch.optim.SGD, torch.optim.AdamW]),
     "learning_rate" : tune.loguniform(1e-4, 1e-1),
@@ -70,18 +67,15 @@ class Explorer(nn.Module):
         self.embedding_layer_hidden_dim = config["embedding_layer_hidden_dim"]
         self.resnetInitType = config["resnetInitType"]
         self.kernel_size = config["kernel_size"]
-        self.stride = config["stride"]
-        self.padding = config["padding"]
-        self.dilation = config["dilation"]
         self.groups = config["groups"]
         self.bias = config["bias"]
         self.normalization_layer = config["normalization_layer"]
-        self.Attention = config["Attention"]
-        self.attention_num_heads = config["attention_num_heads"]
-        self.attention_dropout = config["attention_dropout"]
+        # self.Attention = config["Attention"]
+        # self.attention_num_heads = config["attention_num_heads"]
+        # self.attention_dropout = config["attention_dropout"]
         self.dropout = config["dropout"]
         self.dropout_inplace = config["dropout_inplace"]
-        self.lstm = config["lstm"]
+        # self.lstm = config["lstm"]
         self.activation = config["activation"]
         self.optimizer = config["optimizer"]
         self.learning_rate = config["learning_rate"]
@@ -93,6 +87,7 @@ class Explorer(nn.Module):
         self.scheduler_step_size = config["scheduler_step_size"]
         self.model = self._build_model()
 
+        self.double()
 
     def _build_model(self):
         layers = []
@@ -100,9 +95,9 @@ class Explorer(nn.Module):
         layers.append(nn.Embedding(len(vocab), self.embedding_layer_hidden_dim))
 
         #if attention is true, add attention layer
-        if self.Attention:
-            layers.append(nn.MultiheadAttention(self.embedding_layer_hidden_dim, self.attention_num_heads, 
-                                                dropout=self.attention_dropout, batch_first=True))
+        # if self.Attention:
+        #     layers.append(nn.MultiheadAttention(self.embedding_layer_hidden_dim, self.attention_num_heads, 
+        #                                         dropout=self.attention_dropout, batch_first=True))
         
         #reshape tensor before passing to resnet blocks
         layers.append(BuildingBlocks.DimSwap())
@@ -118,11 +113,14 @@ class Explorer(nn.Module):
         # layers.append(nn.Dropout(self.dropout, inplace=self.dropout_inplace))
 
         #lstm layer
-        if self.lstm:
-            layers.append(nn.LSTM(self.embedding_layer_hidden_dim, self.embedding_layer_hidden_dim))
+        # if self.lstm:
+        #     layers.append(nn.LSTM(self.embedding_layer_hidden_dim, self.embedding_layer_hidden_dim))
         
+        #flatten tensor
+        layers.append(BuildingBlocks.LowerDimensionFrom3To2())
+
         #output layer, take last layer size and output 1
-        layers.append(nn.Linear(self.embedding_layer_hidden_dim*self.embedding_layer_hidden_dim, 1))
+        layers.append(nn.Linear(self.embedding_layer_hidden_dim*self.batch_size, 1))
 
         return nn.Sequential(*layers)
 
@@ -226,10 +224,10 @@ def generate_trial_name(trial):
     num_layers = trial.config["num_layers"]
     embedding_dim = trial.config["embedding_layer_hidden_dim"]
     resnet_init_type = trial.config["resnetInitType"].__name__
-    attention = "Attention" if trial.config["Attention"] else "NoAttention"
-    lstm = "LSTM" if trial.config["lstm"] else "NoLSTM"
+    # attention = "Attention" if trial.config["Attention"] else "NoAttention"
+    # lstm = "LSTM" if trial.config["lstm"] else "NoLSTM"
     # Construct a descriptive name
-    trial_name = f"NumLayers_{num_layers}_EmbeddingDim_{embedding_dim}_ResnetInit_{resnet_init_type}_{attention}_{lstm}"
+    trial_name = f"NumLayers_{num_layers}_EmbeddingDim_{embedding_dim}_ResnetInit_{resnet_init_type}"
     return trial_name
 
 
@@ -252,7 +250,7 @@ if __name__ == "__main__":
     tuner = tune.Tuner(
         tune.with_resources(
             tune.with_parameters(train_model),
-            resources={"cpu": 6, "gpu": 0.25}
+            resources={"cpu": 2, "gpu": 0.5}
         ),
         tune_config=tune.TuneConfig(
             metric="loss",

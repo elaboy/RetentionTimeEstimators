@@ -19,6 +19,13 @@ class ColapseLastTwoDims(nn.Module):
 
     def forward(self, x):
         return x.view(x.size(0), x.size(1)*x.size(2))
+    
+class LowerDimensionFrom3To2(nn.Module):
+    def __init__(self):
+        super(LowerDimensionFrom3To2, self).__init__()
+
+    def forward(self, x):
+        return x.view(x.size(0), x.size(1)*x.size(2))
 
 class ResNetBlockLayer(object):
     @staticmethod
@@ -294,7 +301,7 @@ class RecurrentLayers(object):
 class PaddingLayers(object):
     @staticmethod
     def getZeroPadding1d(config):
-        return nn.ZeroPad1d(padding = config["stride"])
+        return nn.ZeroPad1d(padding = (0,4))
 
 def getMultiHeadAttention(config):
     layers = []

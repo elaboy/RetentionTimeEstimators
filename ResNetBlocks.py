@@ -34,7 +34,7 @@ class ResNetBlockKaimingNormalFanOut(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -68,7 +68,7 @@ class ResNetBlockKaimingNormalFanIn(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -102,7 +102,7 @@ class ResNetBlockKaimingUniformFanOut(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -136,7 +136,7 @@ class ResNetBlockKaimingUniformFanIn(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -170,7 +170,7 @@ class ResNetBlockXavierNormal(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -204,7 +204,7 @@ class ResNetBlockXavierUniform(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -238,7 +238,7 @@ class ResNetBlockOrthogonal(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -272,7 +272,7 @@ class ResNetBlockSparse(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -306,7 +306,7 @@ class ResNetBlockSparseDense(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -340,7 +340,7 @@ class ResNetBlockNormalInit(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
@@ -370,7 +370,7 @@ class ResNetBlockRandomInit(nn.Module):
         x = self.conv2(x)
         x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x = self.batchNorm2(x)
-        # x = utils.padTensorBatchAfterCNN(x, self.in_channels)
+        #x = utils.padTensorBatchAfterCNN(x, self.in_channels)
         x += residual
         x = self.relu(x)
         return x
