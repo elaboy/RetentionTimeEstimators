@@ -1,91 +1,196 @@
 from sklearn.model_selection import train_test_split
 from src import tokenize
+import numpy as np
 import random
 import torch
 import pandas as pd
 import os
+from enum import Enum
+from PeptidesWithRetentionTimeDataset import PeptidesWithRetentionTimes
+import re as regex
 
-def splitData(data: list, trainSize:float, testSize: float) -> list:
+class Tokenizer(object):
     '''
-    Splits the data into training and testing data. Train and test size must add to 1.
+    Tokenizer contains all methods related to tokenizing the sequences
+    and preparing them for the model.
     '''
-    #split the data into training and testing data
-    trainData, testData = train_test_split(data, train_size=trainSize, test_size=testSize)
 
-    return trainData, testData
+    @staticmethod
+    def read_psmtsv(filePath: str) -> pd.DataFrame:
+        '''
+        Reads the psmtsv file and returns a pd dataframe with the 
+        Full Sequence and the Scan Reported Retention Time.
+        '''
 
-def get_training_datasets(vocabPath, dataPath, trainSize, validationSize):
-    '''
-    Returns the training and testing datasets.
-    '''
-    # Load the vocabulary
-    vocab = tokenize.readVocabulary("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\vocab.csv")
-    # Load the data
-    data = tokenize.readData("C:\\Users\\elabo\\Documents\\GitHub\\RetentionTimeEstimators\\CalibratorTestingMultipleFiles.csv")
-    # pre-Tokenize the data
-    preTokens = tokenize.getPreTokens(data)
-    # Tokenize the data
-    tokens = tokenize.tokenizePreTokens(random.sample(preTokens, 1000),
-                                        vocab, 100, tokenize.TokenFormat.TwoDimensional)
-    train, validate = train_test_split(tokens, train_size=trainSize, test_size=validationSize)
+        df = pd.read_csv(filePath, index_col=None,
+                            sep="\t",
+                            header=0,
+                            usecols=["Scan Retention Time",
+                                    "Full Sequence"])
+        return df
 
-    return trainData, testData
-
-from src.tokenize import get_aa_vocab
-
-def read_batched_tensor_get_chronologer_format(dataset: 'TestingTensorsDataset', vocab: dict) -> list:
-    '''
-    Reads dataset and returns a list of the fullSequence with mass shift from choronologer format in the chronologer_mod_format_dict.
-    1-20 in vocab corresponds to the 20 canonical amino acids 
-    '''
-    full_sequence_with_retention_time = []
-    #dataset is a TestingTensorsDataset a child class of torch.utils.data.Dataset
-    #iterate through the dataset and get the fullSequence and the mass shift
-    for batch in dataset:
-        #iterate through the data(batched 2D tensor, batched 1D tensor) and get the fullSequence and the retention time
-        tokens = None
-        for index, sequence in enumerate(zip(batch[0], batch[1])):
-            data = sequence[0]
-            rt = sequence[1]
-            tokens = (get_tensor_as_tokens(data, vocab))
-            #change the tokens to their string representation from the vocab
-            fullSequence = []
-            #Slice vocab dictionay to get the first 20 tokens which are the residues
-            aa = get_aa_vocab()
-            for token in tokens:
-                if token in chronologer_mod_format_dict: #its a residue or a chronologer mod 
-                    fullSequence.append("["+str(chronologer_mod_format_dict[token])+"]")
-                elif token in aa: #its a residue
-                    fullSequence.append(vocab[token])
-            full_sequence_with_retention_time.append(("".join(fullSequence), rt.item()))
-    return full_sequence_with_retention_time
-
-def get_tensor_as_tokens(tensor: torch.Tensor, vocab: dict) -> list:
-    '''
-    Returns a list of tokens id from a tensor.
-    '''
-    tokens = []
-    #tensor is 2D tensor, iterate through the tensor and get tokens. 
-    #check each position in both dimensions and get the token, if the second dimension is 0, then it is a residue, so just get the token from vocab
-    #else its a modification, get aa from vocab and appends, then get the modification from the dictionary and appends
-    tensor_as_list = tensor.tolist()
-    for i in range(100):
-        if tensor_as_list[1][i] == 0:
-            tokens.append(tensor_as_list[0][i])
-        else:
-            tokens.append(tensor_as_list[0][i])
-            tokens.append(tensor_as_list[1][i])
-    return tokens
-
-class TestingTensorsDataset(torch.utils.data.Dataset):
-   def __init__(self, folder):
-       self.files = os.listdir(folder)
-       self.folder = folder
-   def __len__(self):
-       return len(self.files)
-   def __getitem__(self, idx):
-       return torch.load(f"{self.folder}/{self.files[idx]}")
+    @staticmethod
+    def readVocabulary(filePath: str) -> dict:
+        df = pd.read_csv(filePath, index_col="Token")
+        vocabularyDictionary = df.to_dict()["Id"]
+        return vocabularyDictionary
     
+    @staticmethod
+    def get_swap_dict(d):
+        return {v: k for k, v in d.items()}
+    
+    @staticmethod
+    #Tokenizes the sequence and returns a list of pre-tokenized sequences (clean)
+    def getPreTokens(df: pd.DataFrame) -> list:
+        preTokens = []
+        for index, row in df.iterrows():
+            sequence = str(row[0])
+            if(sequence.count("[") > 0):
+                stars = regex.sub(
+                "(?<=[A-HJ-Z])\\[|(?<=\\[)[A-HJ-Z](?=\\])|(?<=[A-HJ-Z])\\](?=$|[A-Z]|(?<=\\])[^A-Z])",
+                    "*",
+                      sequence)
+                removedColon = regex.sub("\\*(.*?):", "*", stars)
+                preTokens.append((removedColon, row[1]))
+            else:
+                preTokens.append((sequence, row[1]))
+
+        return preTokens
+    
+    @staticmethod
+    def tokenizePreTokens(preTokens: list, vocabularyDictionary: dict,
+                       sequenceLength: int, tokenFormat: Enum) -> list:
+        '''
+        Tokenizes the preTokens and returns a list of tokens. 
+        Format of each item in the list: [2D np array (sequence, mods), retention time]
+        '''
+
+        tokens = []
+        # For now will be using the two dimensional format,
+        # need to implement the other formats later if necesary
+        if(tokenFormat == TokenFormat.TwoDimensional):
+            for sequence in preTokens:
+                tokenList = []
+                modList = []
+                #form the tokenList and the modList. 
+                #tokenList is the list of tokens for the residues and modList is 
+                #the list of tokens for the modifications
+                for subSequence in sequence[1].split("*"):
+                    if("on" not in subSequence):
+                        for residue in subSequence:
+                            if(residue in vocabularyDictionary):
+                                tokenList.append(vocabularyDictionary[residue])
+                                modList.append(0)
+                            else:
+                                tokenList.clear()
+                                modList.clear()
+                                break
+                    else:
+                        if(subSequence in vocabularyDictionary):
+                            if(subSequence[len(subSequence)-1] == "X"):
+                                tokenList.append(22)
+                                modList.append(vocabularyDictionary[subSequence])
+                            elif(subSequence[len(subSequence)-1] == "U"):
+                                tokenList.append(21)
+                                modList.append(0)
+                            else:
+                                tokenList.append(vocabularyDictionary[subSequence[len(subSequence)-1]])
+                                modList.append(vocabularyDictionary[subSequence])
+                        else:
+                            tokenList.clear()
+                            modList.clear()
+                            break
+                #if the sequence is less than the sequence length, pad it with zeros
+                if(len(tokenList) != 0):
+                    while(len(tokenList) != sequenceLength and len(modList) < sequenceLength):
+                        tokenList.append(0)
+                        modList.append(0)
+                    #make 2d np array
+                    arrayList = []
+                    arrayList.append(np.array(tokenList, dtype=np.int32))
+                    arrayList.append(np.array(modList, dtype=np.int32))
+                    #stack the arrays
+                    sequenceWithMods = np.vstack(arrayList)
+                    #append the stacked arrays with the retention time to the tokens list
+                    tokens.append((sequenceWithMods, float(sequence[0])))
+
+        elif(tokenFormat == TokenFormat.OneDimNoMod):
+            for sequence in preTokens:
+                tokenList = []
+                for residue in sequence[0]:
+                    if(residue in vocabularyDictionary):
+                        tokenList.append(vocabularyDictionary[residue])
+                    else:
+                        tokenList.clear()
+                        break
+                if(len(tokenList) != 0):
+                    while(len(tokenList) != sequenceLength):
+                        tokenList.append(0)
+                    tokens.append((np.array(tokenList, dtype=np.int32), sequence[1]))
+        return tokens
+    
+    @staticmethod
+    def run_tokenizer(filePath: str, vocabPath: str,
+                       sequenceLength: int, tokenFormat: Enum) -> PeptidesWithRetentionTimes:
+        psmtsv_df = Tokenizer.read_psmtsv(filePath)
+        vocab = Tokenizer.readVocabulary(vocabPath)
+        preTokens = Tokenizer.getPreTokens(psmtsv_df)
+        tokens = Tokenizer.tokenizePreTokens(preTokens, vocab, sequenceLength, tokenFormat)
+        sequences, retention_times = Tokenizer.prepare_datasets(tokens)
+        return PeptidesWithRetentionTimes(sequences, retention_times)
+
+    @staticmethod
+    def run_tokenizer(filePath: str, vocabPath: str, sequenceLength: int, tokenFormat: Enum,
+                    training_split: float = 0.8, validation_split: float = 0.5,
+                      testing_split: float = 0.5, random_state: int = 42) -> PeptidesWithRetentionTimes:
+        psmtsv_df = Tokenizer.read_psmtsv(filePath)
+        
+        #split into training, testing and validation sets
+        training_data = psmtsv_df.sample(frac=training_split, random_state=random_state)
+        testing_data = psmtsv_df.drop(training_data.index).sample(frac=testing_split, random_state=random_state)
+        validation_data = psmtsv_df.drop(training_data.index).drop(testing_data.index)
+
+        #get the vocabulary
+        vocab = Tokenizer.readVocabulary(vocabPath)
+        
+        #get the pretokens
+        training_data = Tokenizer.getPreTokens(training_data)
+        testing_data = Tokenizer.getPreTokens(testing_data)
+        validation_data = Tokenizer.getPreTokens(validation_data)
+
+        #tokenize the dataset
+        training_tokens = Tokenizer.tokenizePreTokens(training_data, vocab, sequenceLength, tokenFormat)
+        testing_tokens = Tokenizer.tokenizePreTokens(testing_data, vocab, sequenceLength, tokenFormat)
+        validation_tokens = Tokenizer.tokenizePreTokens(validation_data, vocab, sequenceLength, tokenFormat)
+
+        #prepare the datasets
+        training_sequences, training_retention_times = Tokenizer.prepare_datasets(training_tokens)
+        validation_sequences, validation_retention_times = Tokenizer.prepare_datasets(validation_tokens)
+        testing_sequences, testing_retention_times = Tokenizer.prepare_datasets(testing_tokens)
+
+        return PeptidesWithRetentionTimes(training_sequences, training_retention_times), \
+                PeptidesWithRetentionTimes(validation_sequences, validation_retention_times), \
+                PeptidesWithRetentionTimes(testing_sequences, testing_retention_times)
+    
+    @staticmethod
+    def prepare_datasets(tokens: list):
+        sequences = []
+        retention_times = []
+        for i in tokens:
+            sequences.append(i[0])
+            retention_times.append(i[1])
+        return sequences, retention_times
+    
+
+class TokenFormat(Enum):
+    OneDimensionalRedundant = 1, #mods are in the same dimension as the residues and are redundant(residue,mod) 
+    OneDimensionalNonRedundant = 2, #mods are in the same dimension as the residues and are not redundant(modWithResidue) 
+    TwoDimensional = 3, #mods are in a separate dimension from the residues
+    OneDimNoMod = 4 #no modifications
+aa = {"A":1,"C":2,"D":3, "E":4, "F":5, "G":6, "H":7,
+                        "I":8, "K":9, "L":10, "M":11, "N":12, "P":13,
+                        "Q":14, "R":15, "S":16, "T":17, "V":18, "W":19, "Y":20,
+                        "U":21, "X":22} #U is for selenocysteine and X is for any amino acid
 
 chronologer_mod_format_dict = {
 268 : "+57.021464", #carbamidomethyl on M
