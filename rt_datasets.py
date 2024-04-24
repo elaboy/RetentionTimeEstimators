@@ -8,12 +8,12 @@ def sortPSMTSV(path : str):
     sorted_df = df[["Base Sequence", "Scan Retention Time"]].sort_values("Scan Retention Time").reset_index()
     return sorted_df[["Base Sequence", "Scan Retention Time"]]
 
-df = dd.read_csv(r"/mnt/f/RetentionTimeProject/OtherPeptideResultsForTraining/PXD005573/RFig1HeLa11ppm_Report.xls", sep = "\t",
-                   usecols=['Stripped Sequence', "RT"], low_memory=True).rename(
-                        columns={'Stripped Sequence' : 'Base Sequence', 'RT' : 'Scan Retention Time'}).sort_values(
-                            'Scan Retention Time').reset_index()
+# df = pd.read_csv(r"/mnt/f/RetentionTimeProject/OtherPeptideResultsForTraining/PXD005573/RFig1HeLa11ppm_Report.xls", sep = "\t",
+#                    usecols=['Stripped Sequence', "RT"], low_memory=True).rename(
+#                         columns={'Stripped Sequence' : 'Base Sequence', 'RT' : 'Scan Retention Time'}).sort_values(
+#                             'Scan Retention Time').reset_index()
 
-df = df[["Base Sequence", "Scan Retention Time"]]
+# df = df[["Base Sequence", "Scan Retention Time"]]
 
 # df.to_csv(r"/mnt/f/RetentionTimeProject/OtherPeptideResultsForTraining/PXD005573/RFig1HeLa11ppm_Report_sorted.csv")
 
@@ -44,12 +44,30 @@ dataframes = [a549_df, gamg_df, hek293_df, hela_df, hepG2a_df, jurkat_df, k562_d
 
 #read them back in 
 
-
-df
+df = a549_df
 
 for index, i in enumerate(dataframes):
-    dd.merge(df, i, on="Base Sequence", suffixes = (str(index-1),str(index)))
-    # break
+    df = pd.merge(df, i, on="Base Sequence", suffixes = (str(index-1),str(index)))
 
-df.to_parquet(r"/mnt/f/RetentionTimeProject/overlapping_sequences.parquet")
+df.to_csv("/mnt/f/RetentionTimeProject/overlapping_sequences.csv")
+
+df = pd.read_csv("/mnt/f/RetentionTimeProject/overlapping_sequences.csv")
+
+#average of retention times 
+df["average"] = df[["Scan Retention Time-1", "Scan Retention Time0"]].mean(axis=1)
+df["std"] = df[["Scan Retention Time-1", "Scan Retention Time0"]].std(axis=1)
+
+#scatter plot of retention times
+plt.scatter(df["Scan Retention Time-1"], df["Scan Retention Time0"], s=0.2)
+plt.savefig("/mnt/f/RetentionTimeProject/overlapping_sequences.png")
+
+# #visualize the data as scatter plot
+# fig, ax = plt.subplots()
+# ax.errorbar(df.index[0:1000], df["average"][0:1000], yerr=df["std"][0:1000], fmt='o')
+# ax.set_xlabel("Index")
+# ax.set_ylabel("Retention Time")
+# #change size
+# fig.set_size_inches(18.5, 10.5)
+# fig.savefig("/mnt/f/RetentionTimeProject/overlapping_sequences.png")
+
 # overlapping_sequences.plot()
